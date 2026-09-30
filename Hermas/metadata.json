@@ -1,0 +1,6 @@
+{
+  "name": "Hermas — Patrimônio Pessoal",
+  "description": "Cofre financeiro local-first, determinístico e privado para gestão patrimonial, investimentos e fiscal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

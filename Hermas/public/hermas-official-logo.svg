@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180" width="240" height="180">
+  <defs>
+    <!-- Gradiente Ouro Nobre das 4 Barras de Rentabilidade -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCD34D"/>
+      <stop offset="40%" stop-color="#EAB308"/>
+      <stop offset="80%" stop-color="#CA8A04"/>
+      <stop offset="100%" stop-color="#A16207"/>
+    </linearGradient>
+
+    <!-- Gradiente Azul Marinho Profundo -->
+    <linearGradient id="navyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#172554"/>
+      <stop offset="60%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#0B132B"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Grupo do Símbolo H centralizado no topo -->
+  <g transform="translate(68, 6) scale(0.52)">
+    <!-- Coluna Esquerda do H -->
+    <path d="M 42 35 L 72 35 L 72 108 C 64 118 56 129 48 141 L 42 141 Z" fill="url(#navyGrad)"/>
+    <path d="M 42 141 L 48 141 C 54 150 60 159 66 165 L 42 165 Z" fill="url(#navyGrad)"/>
+
+    <!-- 4 Barras Ascendentes de Rentabilidade -->
+    <rect x="76" y="98" width="9.5" height="32" rx="1.5" fill="url(#goldGrad)"/>
+    <rect x="88.5" y="82" width="9.5" height="48" rx="1.5" fill="url(#goldGrad)"/>
+    <rect x="101" y="66" width="9.5" height="64" rx="1.5" fill="url(#goldGrad)"/>
+    <rect x="113.5" y="50" width="9.5" height="80" rx="1.5" fill="url(#goldGrad)"/>
+
+    <!-- Coluna Direita do H -->
+    <path d="M 126 35 L 156 35 L 156 165 L 126 165 L 126 112 C 137 104 147 97 153 92 L 153 96 C 144 102 135 108 126 116 Z" fill="url(#navyGrad)"/>
+
+    <!-- Faixa Curva Branca Superior -->
+    <path d="M 48 141 C 67 113 97 91 154 85 C 156 86 155 90 152 92 C 97 99 71 124 49 144 Z" fill="#FFFFFF"/>
+
+    <!-- Arco Inferior Azul Marinho -->
+    <path d="M 49 145 C 71 125 99 100 152 93 L 152 102 C 103 112 77 137 67 165 L 55 165 C 52 158 50 151 49 145 Z" fill="url(#navyGrad)"/>
+  </g>
+
+  <!-- Tipografia HERMAS -->
+  <text 
+    x="120" 
+    y="142" 
+    text-anchor="middle" 
+    font-family="'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" 
+    font-size="22" 
+    font-weight="800" 
+    letter-spacing="5" 
+    fill="#0F172A"
+  >
+    HERMAS
+  </text>
+
+  <!-- Slogan Oficial -->
+  <text 
+    x="120" 
+    y="162" 
+    text-anchor="middle" 
+    font-family="'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" 
+    font-size="7.5" 
+    font-weight="700" 
+    letter-spacing="2" 
+    fill="#475569"
+  >
+    CLAREZA • CONTROLE • TRANSPARÊNCIA
+  </text>
+</svg>

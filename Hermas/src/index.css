@@ -1,0 +1,202 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  .font-mono-numbers {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Previne tabelas de esmagarem cabeçalhos no mobile */
+  table {
+    border-collapse: collapse;
+  }
+
+  th {
+    white-space: nowrap !important;
+  }
+
+  /* Garante rolagem horizontal fluida e suave em telas pequenas */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Otimizações Mobile para Gráficos Recharts e Touch no Android */
+  .recharts-wrapper {
+    touch-action: pan-y !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -webkit-touch-callout: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    outline: none !important;
+  }
+
+  .recharts-surface {
+    outline: none !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  .recharts-wrapper *,
+  .recharts-surface * {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+  }
+
+  .chart-card-container {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.6);
+}
+
+/* Simulação de Folha de Papel A4 em Tela (Print Preview) */
+.print-paper-sheet {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.print-paper-sheet * {
+  border-color: #e2e8f0 !important;
+}
+
+.print-paper-sheet [class*="dark:bg-slate-900"],
+.print-paper-sheet [class*="dark:bg-slate-800"],
+.print-paper-sheet [class*="dark:bg-[#0f172a]"],
+.print-paper-sheet [class*="dark:bg-[#0b1120]"] {
+  background-color: #ffffff !important;
+}
+
+.print-paper-sheet [class*="dark:bg-slate-800/40"],
+.print-paper-sheet [class*="dark:bg-slate-800/50"],
+.print-paper-sheet [class*="dark:bg-slate-800/80"] {
+  background-color: #f8fafc !important;
+}
+
+.print-paper-sheet [class*="dark:text-white"],
+.print-paper-sheet [class*="dark:text-slate-100"],
+.print-paper-sheet [class*="dark:text-slate-200"] {
+  color: #0f172a !important;
+}
+
+.print-paper-sheet [class*="dark:text-slate-300"],
+.print-paper-sheet [class*="dark:text-slate-400"] {
+  color: #475569 !important;
+}
+
+.print-paper-sheet [class*="dark:border-"] {
+  border-color: #e2e8f0 !important;
+}
+
+/* Regras Oficiais de Impressão Contábil */
+@media print {
+  @page {
+    margin: 10mm 12mm;
+    size: auto;
+  }
+
+  /* Forçar esquema claro para impressão limpa e econômica */
+  *, *::before, *::after {
+    color-scheme: light !important;
+  }
+
+  html, body, #root, #root > div, main {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    font-size: 9.5pt !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Forçar cores nítidas e fundo branco em cards e tabelas mesmo no tema escuro */
+  .dark [class*="dark:bg-slate-900"],
+  .dark [class*="dark:bg-slate-800"],
+  .dark [class*="dark:bg-[#0f172a]"],
+  .dark [class*="dark:bg-[#0b1120]"] {
+    background-color: #ffffff !important;
+  }
+
+  .dark [class*="dark:bg-slate-800/40"],
+  .dark [class*="dark:bg-slate-800/50"],
+  .dark [class*="dark:bg-slate-800/80"] {
+    background-color: #f8fafc !important;
+  }
+
+  .dark [class*="dark:text-white"],
+  .dark [class*="dark:text-slate-100"],
+  .dark [class*="dark:text-slate-200"] {
+    color: #0f172a !important;
+  }
+
+  .dark [class*="dark:text-slate-300"],
+  .dark [class*="dark:text-slate-400"] {
+    color: #475569 !important;
+  }
+
+  .dark [class*="dark:border-slate-800"],
+  .dark [class*="dark:border-slate-700"] {
+    border-color: #cbd5e1 !important;
+  }
+
+  /* Esconder barras de navegação, cabeçalho de tela, sidebar, popups e controles interativos */
+  header, nav, aside, .sidebar-container, .print\:hidden, [class*="print:hidden"] {
+    display: none !important;
+  }
+
+  /* Expandir conteúdo para 100% da folha */
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Tabelas limpas para impressão contábil */
+  table {
+    page-break-inside: auto;
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  thead {
+    display: table-header-group;
+  }
+}
+
