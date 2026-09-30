@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+@theme {
+  --color-slate-950: #0e0f14;
+  --color-slate-900: #16171d;
+  --color-slate-800: #22242e;
+  --color-slate-700: #2b2e3b;
+  --color-slate-600: #4a4e60;
+  --color-slate-500: #717688;
+  --color-slate-400: #8f94a6;
+  --color-slate-300: #bfc4d3;
+  --color-slate-200: #e2e5ee;
+  --color-slate-100: #f1f3f8;
+  --color-slate-50: #f8f9fc;
+}
+
 @variant dark (&:where(.dark, .dark *));
 
 @layer base {

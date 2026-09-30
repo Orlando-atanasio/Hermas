@@ -391,7 +391,7 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
                           }}
                           className={`w-full text-left px-3.5 py-2 cursor-pointer transition-colors ${
                             evolutionPeriod === p.id
-                              ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold'
+                              ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 font-bold'
                               : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
                           }`}
                         >
@@ -436,7 +436,7 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
                           }}
                           className={`w-full text-left px-3.5 py-2 cursor-pointer transition-colors ${
                             evolutionTypeFilter === opt.id
-                              ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold'
+                              ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 font-bold'
                               : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
                           }`}
                         >
@@ -692,7 +692,7 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
                         }}
                         className={`w-full text-left px-3.5 py-2 cursor-pointer transition-colors ${
                           selectedDonutType === opt.id
-                            ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 font-bold'
                             : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
                         }`}
                       >
@@ -777,7 +777,7 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
                     >
                       {activeDonutSlice ? (
                         <>
-                          <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider truncate max-w-[80px]">
+                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider truncate max-w-[80px]">
                             {activeDonutSlice.name}
                           </span>
                           <span className="text-xs font-bold text-slate-900 dark:text-white font-mono-numbers">
@@ -811,7 +811,7 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
                         }
                         className={`flex items-center justify-between text-xs py-1.5 px-2 rounded-lg transition-colors cursor-pointer ${
                           isSelected
-                            ? 'bg-blue-50 dark:bg-blue-950/60 ring-1 ring-blue-500'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/50 ring-1 ring-emerald-500'
                             : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'
                         }`}
                       >

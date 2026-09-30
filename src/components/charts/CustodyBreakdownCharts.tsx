@@ -238,7 +238,7 @@ export const CustodyBreakdownCharts: React.FC<CustodyBreakdownChartsProps> = ({ 
           {/* Cabeçalho com Dropdown de Filtro */}
           <div className="flex items-center justify-between gap-2 mb-3">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
               <span>Repartição de Custódia (Peso em %)</span>
             </h3>
 
@@ -273,7 +273,7 @@ export const CustodyBreakdownCharts: React.FC<CustodyBreakdownChartsProps> = ({ 
                       }}
                       className={`w-full text-left px-3.5 py-2 cursor-pointer transition-colors ${
                         selectedFilterType === opt.id
-                          ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold'
+                          ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 font-bold'
                           : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
                       }`}
                     >
@@ -291,14 +291,14 @@ export const CustodyBreakdownCharts: React.FC<CustodyBreakdownChartsProps> = ({ 
 
           {/* Banner de Item Selecionado */}
           {activeDonutSlice && (
-            <div className="mb-2 p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-between text-xs animate-in fade-in">
+            <div className="mb-2 p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between text-xs animate-in fade-in">
               <div>
-                <strong className="text-blue-900 dark:text-blue-300">
+                <strong className="text-emerald-900 dark:text-emerald-300">
                   {activeDonutSlice.name}
                 </strong>
                 <span className="text-slate-500 ml-2">
                   Valor:{' '}
-                  <strong className="font-mono text-blue-600 dark:text-blue-400">
+                  <strong className="font-mono text-emerald-600 dark:text-emerald-400">
                     {formatBRL(activeDonutSlice.value)}
                   </strong>{' '}
                   • Participação:{' '}
@@ -387,7 +387,7 @@ export const CustodyBreakdownCharts: React.FC<CustodyBreakdownChartsProps> = ({ 
                 >
                   {activeDonutSlice ? (
                     <>
-                      <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider truncate max-w-[80px]">
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider truncate max-w-[80px]">
                         {activeDonutSlice.name}
                       </span>
                       <span className="text-xs font-bold text-slate-900 dark:text-white font-mono-numbers">
@@ -421,7 +421,7 @@ export const CustodyBreakdownCharts: React.FC<CustodyBreakdownChartsProps> = ({ 
                     }
                     className={`flex items-center justify-between text-xs py-1.5 px-2 rounded-lg transition-colors cursor-pointer ${
                       isSelected
-                        ? 'bg-blue-50 dark:bg-blue-950/60 ring-1 ring-blue-500'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/50 ring-1 ring-emerald-500'
                         : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'
                     }`}
                   >

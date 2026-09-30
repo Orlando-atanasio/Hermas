@@ -313,7 +313,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-slate-100 transition-colors">
+    <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
       {/* Tela Inicial de Entrada & Bloqueio do Cofre */}
       {isLocked && (
         <VaultLockScreen 
