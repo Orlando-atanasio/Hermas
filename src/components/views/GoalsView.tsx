@@ -93,7 +93,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
       <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
           <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Target className="w-5 h-5 text-blue-600" />
+            <Target className="w-5 h-5 text-amber-500" />
             <span>Metas Patrimoniais & Modelagem Financeira (PMT)</span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -103,7 +103,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
 
         <button
           onClick={() => setIsCreatingGoal(true)}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Nova Meta</span>
@@ -131,7 +131,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                 onClick={() => setSelectedGoal(goal)}
                 className={`p-5 rounded-2xl border transition-all cursor-pointer relative ${
                   isSelected
-                    ? 'border-blue-500 bg-blue-50/40 dark:bg-blue-950/20 shadow-sm'
+                    ? 'border-amber-500/70 bg-amber-500/10 shadow-xs'
                     : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'
                 }`}
               >
@@ -167,16 +167,16 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                 <div className="mt-2">
                   <div className="flex items-center justify-between text-[11px] mb-1">
                     <span className="text-slate-400">Progresso</span>
-                    <span className="font-bold text-blue-600 font-mono-numbers">{clampedPct.toFixed(1)}%</span>
+                    <span className="font-bold text-amber-500 font-mono-numbers">{clampedPct.toFixed(1)}%</span>
                   </div>
                   <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                    <div style={{ width: `${clampedPct}%` }} className="h-full bg-blue-600 rounded-full" />
+                    <div style={{ width: `${clampedPct}%` }} className="h-full bg-amber-500 rounded-full" />
                   </div>
                 </div>
 
                 <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
                   <span className="text-slate-500">Aporte Sugerido:</span>
-                  <span className="font-bold text-blue-600 dark:text-blue-400 font-mono-numbers">
+                  <span className="font-bold text-amber-500 dark:text-amber-400 font-mono-numbers">
                     {formatBRL(goal.aporteMensalEstimado)}/mês
                   </span>
                 </div>
@@ -198,9 +198,9 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                     Data Limite: {selectedGoal.dataAlvo} • Taxa Estimada: {selectedGoal.taxaEsperadaAa}% a.a.
                   </p>
                 </div>
-                <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900 text-right">
-                  <span className="text-[11px] text-blue-600 dark:text-blue-300 font-semibold block">Aporte Mensal (PMT)</span>
-                  <span className="text-lg font-bold text-blue-700 dark:text-blue-200 font-mono-numbers">
+                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-right">
+                  <span className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold block">Aporte Mensal (PMT)</span>
+                  <span className="text-lg font-bold text-amber-600 dark:text-amber-300 font-mono-numbers">
                     {formatBRL(selectedGoal.aporteMensalEstimado)}
                   </span>
                 </div>
@@ -209,7 +209,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
               {/* Tabela de Projeção Mensal 1 -> N */}
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4 text-blue-600" />
+                  <Calendar className="w-4 h-4 text-amber-500" />
                   <span>Projeção Mensal de Acúmulo e Juros Compostos (1→N)</span>
                 </h4>
 
@@ -237,7 +237,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                           <td className="px-4 py-3 text-right font-mono-numbers tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold">
                             +{formatBRL(p.rendimentoMes)}
                           </td>
-                          <td className="px-4 py-3 text-right font-mono-numbers tabular-nums text-blue-600 dark:text-blue-400 font-semibold">
+                          <td className="px-4 py-3 text-right font-mono-numbers tabular-nums text-amber-600 dark:text-amber-400 font-semibold">
                             +{formatBRL(p.aporteMes)}
                           </td>
                           <td className="px-4 py-3 text-right font-mono-numbers tabular-nums font-bold text-slate-900 dark:text-white">
@@ -357,7 +357,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold cursor-pointer"
                 >
                   Calcular PMT & Salvar
                 </button>

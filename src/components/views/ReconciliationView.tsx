@@ -320,17 +320,17 @@ export const ReconciliationView: React.FC<ReconciliationViewProps> = ({
   return (
     <div className="space-y-6 max-w-6xl">
       {/* Top Banner de Integridade & Auditoria */}
-      <div className="p-6 rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-950 text-white relative overflow-hidden shadow-xl border border-indigo-800/40">
+      <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-mono">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 text-xs font-mono">
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
               <span>Selo de Integridade Determinística Hermas</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Central de Conciliação Patrimonial
             </h1>
-            <p className="text-slate-300/80 text-xs sm:text-sm max-w-2xl leading-relaxed">
+            <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl leading-relaxed">
               Verificação cruzada independente entre <strong>Notas Fiscais de Corretagem</strong>, <strong>Ordens do Livro-Razão</strong> e <strong>Saldos em Custódia</strong>. Nenhum patrimônio é exibido sem rastreabilidade contábil.
             </p>
           </div>
@@ -340,7 +340,7 @@ export const ReconciliationView: React.FC<ReconciliationViewProps> = ({
               type="button"
               onClick={handleRunAudit}
               disabled={isAuditing}
-              className="px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-70"
+              className="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-70"
             >
               <RefreshCw className={`w-4 h-4 ${isAuditing ? 'animate-spin' : ''}`} />
               <span>{isAuditing ? 'Auditando...' : 'Executar Auditoria Agora'}</span>
@@ -348,10 +348,10 @@ export const ReconciliationView: React.FC<ReconciliationViewProps> = ({
             <button
               type="button"
               onClick={() => setIsLaudoModalOpen(true)}
-              className="px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
+              className="px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
               title="Visualizar e Imprimir Laudo de Auditoria"
             >
-              <Printer className="w-4 h-4" />
+              <Printer className="w-4 h-4 text-slate-500 dark:text-slate-400" />
               <span>Imprimir Laudo</span>
             </button>
           </div>
@@ -359,14 +359,14 @@ export const ReconciliationView: React.FC<ReconciliationViewProps> = ({
 
         {/* Feedback visual dinâmico do processo de auditoria */}
         {isAuditing && auditStepText && (
-          <div className="mt-4 p-3 rounded-xl bg-blue-500/20 border border-blue-400/30 text-blue-200 text-xs font-mono flex items-center gap-2 animate-pulse">
-            <RefreshCw className="w-4 h-4 animate-spin text-blue-300" />
+          <div className="mt-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-mono flex items-center gap-2 animate-pulse">
+            <RefreshCw className="w-4 h-4 animate-spin text-emerald-500" />
             <span>{auditStepText}</span>
           </div>
         )}
 
         {/* Rodapé do Banner: Carimbo do Motor */}
-        <div className="mt-6 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-slate-400">
+        <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-slate-400">
           <span>Última checagem local: {lastAuditDate}</span>
           <span>Hash Determinístico: SHA256-Hermas-Integrity-Audit-OK</span>
           <span>Precisão: 40-digit Canonical Decimal</span>

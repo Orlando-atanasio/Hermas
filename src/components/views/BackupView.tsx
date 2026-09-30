@@ -203,7 +203,7 @@ export const BackupView: React.FC<BackupViewProps> = ({ auditLogs, onDataRestore
         <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <HardDriveDownload className="w-5 h-5 text-blue-600" />
+              <HardDriveDownload className="w-5 h-5 text-emerald-500" />
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
                 Exportar Backup do Cofre
               </h3>
@@ -218,7 +218,7 @@ export const BackupView: React.FC<BackupViewProps> = ({ auditLogs, onDataRestore
                   type="checkbox"
                   checked={includeDocuments}
                   onChange={e => setIncludeDocuments(e.target.checked)}
-                  className="rounded text-blue-600 focus:ring-blue-500"
+                  className="rounded text-emerald-600 focus:ring-emerald-500"
                 />
                 <span>Incluir comprovantes e notas de texto extraídas</span>
               </label>
@@ -242,7 +242,7 @@ export const BackupView: React.FC<BackupViewProps> = ({ auditLogs, onDataRestore
             <button
               onClick={() => handleExportBackup('ZIP')}
               disabled={isExporting}
-              className="flex-1 py-2 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="flex-1 py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <FileArchive className="w-4 h-4" />
               <span>Exportar Pacote .ZIP</span>
@@ -272,8 +272,8 @@ export const BackupView: React.FC<BackupViewProps> = ({ auditLogs, onDataRestore
             </p>
 
             <div className="mt-4">
-              <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl hover:border-blue-500 bg-slate-50/50 dark:bg-slate-800/40 text-center cursor-pointer transition-colors">
-                <FileArchive className="w-8 h-8 text-blue-500 mb-2" />
+              <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl hover:border-emerald-500 bg-slate-50/50 dark:bg-slate-800/40 text-center cursor-pointer transition-colors">
+                <FileArchive className="w-8 h-8 text-emerald-500 mb-2" />
                 <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Selecionar Arquivo de Backup (.zip ou .json)
                 </span>

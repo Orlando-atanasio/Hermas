@@ -826,7 +826,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           <button
             onClick={handleOpenPrintPreview}
             title="Visualizar simulação da impressora antes de mandar imprimir ou salvar em PDF"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors cursor-pointer shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors cursor-pointer shadow-xs"
           >
             <Printer className="w-4 h-4" />
             <span>Imprimir / PDF</span>
@@ -1039,7 +1039,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           {/* Barra Superior de Controle da Impressora */}
           <div className="px-4 py-3 sm:px-6 bg-slate-900 border-b border-slate-800 flex items-center justify-between gap-4 shrink-0 shadow-lg">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-blue-600 text-white shadow-sm shrink-0">
+              <div className="p-2 rounded-xl bg-emerald-600 text-white shadow-sm shrink-0">
                 <Printer className="w-5 h-5" />
               </div>
               <div>
@@ -1047,7 +1047,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                   <h3 className="text-sm font-bold text-white tracking-wide truncate max-w-[200px] sm:max-w-none">
                     Simulação da Impressora
                   </h3>
-                  <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-blue-900/60 border border-blue-500/40 text-[10px] font-bold text-blue-300">
+                  <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-[10px] font-bold text-emerald-300">
                     Padrão A4 Oficial
                   </span>
                 </div>
@@ -1093,7 +1093,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               <button
                 onClick={handleExecutePrint}
                 title="Disparar a impressão na impressora física do sistema"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors cursor-pointer shadow-md"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors cursor-pointer shadow-md"
               >
                 <Printer className="w-4 h-4" />
                 <span className="hidden xs:inline sm:inline">Imprimir</span>

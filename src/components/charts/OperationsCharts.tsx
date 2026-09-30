@@ -25,13 +25,13 @@ interface OperationsChartsProps {
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  COMPRA: '#2563eb', // Blue
-  VENDA: '#10b981', // Emerald
+  COMPRA: '#10b981', // Emerald elegante
+  VENDA: '#f59e0b', // Amber suave
   OPENING_POSITION: '#8b5cf6', // Violet
-  DESDOBRAMENTO: '#f59e0b', // Amber
+  DESDOBRAMENTO: '#06b6d4', // Cyan
   GRUPAMENTO: '#f97316', // Orange
   BONIFICACAO: '#14b8a6', // Teal
-  AMORTIZACAO: '#6366f1', // Indigo
+  AMORTIZACAO: '#a855f7', // Purple
 };
 
 export const OperationsCharts: React.FC<OperationsChartsProps> = ({ operations }) => {
@@ -136,7 +136,7 @@ export const OperationsCharts: React.FC<OperationsChartsProps> = ({ operations }
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                 <span>Fluxo Financeiro de Operações (Aportes vs Desinvestimentos)</span>
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -146,11 +146,11 @@ export const OperationsCharts: React.FC<OperationsChartsProps> = ({ operations }
 
             <div className="flex items-center gap-3 text-xs">
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-sm bg-blue-600"></span>
+                <span className="w-2.5 h-2.5 rounded-xs bg-emerald-500"></span>
                 <span className="text-slate-600 dark:text-slate-400 font-medium">Compras (Aportes)</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-sm bg-emerald-500"></span>
+                <span className="w-2.5 h-2.5 rounded-xs bg-amber-500"></span>
                 <span className="text-slate-600 dark:text-slate-400 font-medium">Vendas (Liquidações)</span>
               </div>
             </div>
@@ -158,16 +158,16 @@ export const OperationsCharts: React.FC<OperationsChartsProps> = ({ operations }
 
           {/* Banner de Mês Selecionado */}
           {selectedFlowMonth && (
-            <div className="mb-2 p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-between text-xs animate-in fade-in">
+            <div className="mb-2 p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs animate-in fade-in">
               <div className="flex items-center gap-3 flex-wrap">
-                <span className="font-bold text-blue-900 dark:text-blue-300">
+                <span className="font-bold text-slate-900 dark:text-white">
                   {selectedFlowMonth.mes} ({selectedFlowMonth.operacoes} ordens):
                 </span>
                 <span className="text-slate-600 dark:text-slate-300">
-                  Compras: <strong className="font-mono text-blue-600 dark:text-blue-400">{formatBRL(selectedFlowMonth.compras)}</strong>
+                  Compras: <strong className="font-mono text-emerald-600 dark:text-emerald-400">{formatBRL(selectedFlowMonth.compras)}</strong>
                 </span>
                 <span className="text-slate-600 dark:text-slate-300">
-                  Vendas: <strong className="font-mono text-emerald-600 dark:text-emerald-400">{formatBRL(selectedFlowMonth.vendas)}</strong>
+                  Vendas: <strong className="font-mono text-amber-500 dark:text-amber-400">{formatBRL(selectedFlowMonth.vendas)}</strong>
                 </span>
               </div>
               <button
@@ -186,6 +186,8 @@ export const OperationsCharts: React.FC<OperationsChartsProps> = ({ operations }
               <BarChart
                 data={monthlyFlow}
                 margin={{ top: 10, right: 10, left: 0, bottom: 5 }}
+                barGap={3}
+                barCategoryGap="25%"
                 onClick={(e: any) => {
                   if (e && e.activePayload && e.activePayload.length) {
                     const payload = e.activePayload[0].payload;
@@ -197,7 +199,7 @@ export const OperationsCharts: React.FC<OperationsChartsProps> = ({ operations }
                   }
                 }}
               >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.15)" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.12)" />
                 <XAxis
                   dataKey="mes"
                   tickLine={false}
@@ -222,12 +224,12 @@ export const OperationsCharts: React.FC<OperationsChartsProps> = ({ operations }
                             Competência: {data.mes} ({data.operacoes} ordens)
                           </p>
                           <div className="flex justify-between gap-4">
-                            <span className="text-blue-400">Total Comprado:</span>
-                            <span className="font-mono font-bold">{formatBRL(data.compras)}</span>
+                            <span className="text-emerald-400">Total Comprado:</span>
+                            <span className="font-mono font-bold text-emerald-400">{formatBRL(data.compras)}</span>
                           </div>
                           <div className="flex justify-between gap-4">
-                            <span className="text-emerald-400">Total Vendido:</span>
-                            <span className="font-mono font-bold">{formatBRL(data.vendas)}</span>
+                            <span className="text-amber-400">Total Vendido:</span>
+                            <span className="font-mono font-bold text-amber-400">{formatBRL(data.vendas)}</span>
                           </div>
                         </div>
                       );
@@ -235,8 +237,8 @@ export const OperationsCharts: React.FC<OperationsChartsProps> = ({ operations }
                     return null;
                   }}
                 />
-                <Bar dataKey="compras" fill="#2563eb" radius={[4, 4, 0, 0]} cursor="pointer" />
-                <Bar dataKey="vendas" fill="#10b981" radius={[4, 4, 0, 0]} cursor="pointer" />
+                <Bar dataKey="compras" fill="#10b981" maxBarSize={12} radius={[3, 3, 0, 0]} cursor="pointer" />
+                <Bar dataKey="vendas" fill="#f59e0b" maxBarSize={12} radius={[3, 3, 0, 0]} cursor="pointer" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -255,7 +257,7 @@ export const OperationsCharts: React.FC<OperationsChartsProps> = ({ operations }
         <div>
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-violet-600"></span>
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
               <span>Composição por Tipo</span>
             </h3>
             <span className="text-xs text-slate-400">Volume (R$)</span>
@@ -327,7 +329,7 @@ export const OperationsCharts: React.FC<OperationsChartsProps> = ({ operations }
             >
               {selectedType ? (
                 <>
-                  <span className="text-[10px] text-violet-600 dark:text-violet-400 font-bold uppercase tracking-wider truncate max-w-[80px]">
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider truncate max-w-[80px]">
                     {selectedType.name}
                   </span>
                   <span className="text-xs font-bold text-slate-900 dark:text-white font-mono-numbers">
@@ -357,7 +359,7 @@ export const OperationsCharts: React.FC<OperationsChartsProps> = ({ operations }
                   onClick={() => setSelectedTypeIndex(prev => (prev === idx ? null : idx))}
                   className={`w-full flex items-center justify-between text-[11px] p-1.5 rounded-lg transition-colors cursor-pointer ${
                     isSelected
-                      ? 'bg-violet-50 dark:bg-violet-950/60 ring-1 ring-violet-500'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/40 ring-1 ring-emerald-500'
                       : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'
                   }`}
                 >
