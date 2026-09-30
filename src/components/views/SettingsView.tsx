@@ -130,7 +130,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Settings className="w-5 h-5 text-blue-600" />
+            <Settings className="w-5 h-5 text-emerald-500" />
             <span>Configurações & Parâmetros do Cofre</span>
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -156,11 +156,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* Perfil do Titular */}
       <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl overflow-hidden ring-2 ring-blue-600 ring-offset-2 dark:ring-offset-slate-900">
+          <div className="w-14 h-14 rounded-2xl overflow-hidden ring-2 ring-emerald-500 ring-offset-2 dark:ring-offset-slate-900">
             {userProfile.avatarUrl ? (
               <img src={userProfile.avatarUrl} alt={userProfile.nome} className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full bg-blue-600 text-white font-bold flex items-center justify-center text-lg">
+              <div className="w-full h-full bg-emerald-600 text-white font-bold flex items-center justify-center text-lg">
                 {userProfile.avatarIniciais || 'H'}
               </div>
             )}
@@ -187,7 +187,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {/* Aparência & Tema */}
         <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
           <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-            <Moon className="w-4 h-4 text-blue-600" />
+            <Moon className="w-4 h-4 text-emerald-500" />
             <span>Aparência e Tema</span>
           </h3>
 
@@ -205,14 +205,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   onClick={() => handleSelectTheme(item.id as any)}
                   className={`p-3.5 rounded-2xl border text-xs font-bold flex flex-col items-center justify-center gap-2 cursor-pointer transition-all ${
                     isSelected
-                      ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-500 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500/80 shadow-xs'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-500 text-emerald-700 dark:text-emerald-300 ring-2 ring-emerald-500/80 shadow-xs'
                       : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'
                   }`}
                 >
-                  <item.icon className={`w-5 h-5 ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'}`} />
+                  <item.icon className={`w-5 h-5 ${isSelected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} />
                   <div className="flex items-center gap-1">
                     <span>{item.label}</span>
-                    {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />}
+                    {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
                   </div>
                 </button>
               );
@@ -316,7 +316,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
         <button
           type="submit"
-          className="w-full py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
+          className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
         >
           Salvar Todas as Configurações
         </button>
