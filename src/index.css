@@ -42,26 +42,29 @@
     outline: none !important;
   }
 
-  .recharts-surface {
-    outline: none !important;
-    user-select: none !important;
-    -webkit-user-select: none !important;
-    -webkit-tap-highlight-color: transparent !important;
-  }
-
-  .recharts-wrapper *,
+  .recharts-surface,
   .recharts-surface * {
     outline: none !important;
-    -webkit-tap-highlight-color: transparent !important;
-    -webkit-user-select: none !important;
     user-select: none !important;
+    -webkit-user-select: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-touch-callout: none !important;
   }
 
-  .chart-card-container {
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
-    -webkit-tap-highlight-color: transparent;
+  .recharts-wrapper *:focus,
+  .recharts-wrapper *:focus-visible,
+  .recharts-surface *:focus,
+  .recharts-surface *:focus-visible,
+  svg, svg * {
+    outline: none !important;
+    box-shadow: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  .chart-card-container,
+  .chart-card-container * {
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-touch-callout: none !important;
   }
 }
 

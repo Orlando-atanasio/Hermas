@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   PieChart,
   Pie,
@@ -21,7 +21,16 @@ import {
 import { PortfolioSummary } from '../../engine/portfolio';
 import { Operation, Dividend } from '../../types';
 import { formatBRL, formatPercent } from '../../engine/decimal';
-import { X, Touchpad, CheckCircle2 } from 'lucide-react';
+import {
+  X,
+  CircleDollarSign,
+  Calendar,
+  ChevronDown,
+  TrendingUp,
+  Layers,
+  BarChart2,
+  LineChart,
+} from 'lucide-react';
 
 interface PortfolioChartsProps {
   portfolio: PortfolioSummary;
@@ -29,15 +38,20 @@ interface PortfolioChartsProps {
   dividends: Dividend[];
 }
 
-const ALLOCATION_COLORS = [
-  '#2563eb', // Blue
-  '#10b981', // Emerald
-  '#6366f1', // Indigo
-  '#f59e0b', // Amber
-  '#8b5cf6', // Violet
-  '#06b6d4', // Cyan
-  '#ec4899', // Pink
-  '#64748b', // Slate
+// Paleta harmoniosa e de alto contraste inspirada no design institucional dos prints
+const PALETTE_COLORS = [
+  '#60a5fa', // Azul (FIIs)
+  '#fde047', // Amarelo (Ações)
+  '#4ade80', // Verde (ETFs Intern.)
+  '#c084fc', // Lilás / Roxo (Stocks)
+  '#f87171', // Salmão / Coral (Reits)
+  '#fb923c', // Laranja
+  '#2dd4bf', // Turquesa
+  '#818cf8', // Índigo
+  '#f472b6', // Rosa
+  '#a3e635', // Lima
+  '#38bdf8', // Sky
+  '#94a3b8', // Cinza ardósia
 ];
 
 const ASSET_COLORS = [
@@ -58,56 +72,162 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
   operations,
   dividends,
 }) => {
-  // Estados para seleção/toque interativo no mobile
-  const [selectedClassIndex, setSelectedClassIndex] = useState<number | null>(null);
+  // --- Estados do Gráfico "Ativos na Carteira" (Círculo Donut) ---
+  const [selectedDonutType, setSelectedDonutType] = useState<string>('TODOS');
+  const [isDonutDropdownOpen, setIsDonutDropdownOpen] = useState(false);
+  const [selectedDonutSliceIndex, setSelectedDonutSliceIndex] = useState<number | null>(null);
+  const donutDropdownRef = useRef<HTMLDivElement>(null);
+
+  // --- Estados do Gráfico "Evolução do Patrimônio" ---
+  const [evolutionPeriod, setEvolutionPeriod] = useState<string>('12M');
+  const [isPeriodDropdownOpen, setIsPeriodDropdownOpen] = useState(false);
+  const [evolutionTypeFilter, setEvolutionTypeFilter] = useState<string>('TODOS');
+  const [isEvolutionTypeDropdownOpen, setIsEvolutionTypeDropdownOpen] = useState(false);
+  const [evolutionChartMode, setEvolutionChartMode] = useState<'stacked-bars' | 'area'>('stacked-bars');
   const [selectedTimelinePoint, setSelectedTimelinePoint] = useState<any | null>(null);
+  const periodDropdownRef = useRef<HTMLDivElement>(null);
+  const evolutionTypeDropdownRef = useRef<HTMLDivElement>(null);
+
+  // --- Estados dos Gráficos Inferiores (Top Ativos e Proventos) ---
   const [selectedAssetIndex, setSelectedAssetIndex] = useState<number | null>(null);
   const [selectedDividendPoint, setSelectedDividendPoint] = useState<any | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Fecha seleções ativas ao tocar fora do container dos gráficos
+  // Fecha menus e seleções ao clicar fora
   useEffect(() => {
-    const handleTouchOutside = (e: MouseEvent | TouchEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setSelectedClassIndex(null);
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      if (donutDropdownRef.current && !donutDropdownRef.current.contains(target)) {
+        setIsDonutDropdownOpen(false);
+      }
+      if (periodDropdownRef.current && !periodDropdownRef.current.contains(target)) {
+        setIsPeriodDropdownOpen(false);
+      }
+      if (evolutionTypeDropdownRef.current && !evolutionTypeDropdownRef.current.contains(target)) {
+        setIsEvolutionTypeDropdownOpen(false);
+      }
+      if (containerRef.current && !containerRef.current.contains(target)) {
+        setSelectedDonutSliceIndex(null);
         setSelectedTimelinePoint(null);
         setSelectedAssetIndex(null);
         setSelectedDividendPoint(null);
       }
     };
 
-    document.addEventListener('touchstart', handleTouchOutside, { passive: true });
-    document.addEventListener('mousedown', handleTouchOutside);
+    document.addEventListener('touchstart', handleClickOutside, { passive: true });
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener('touchstart', handleTouchOutside);
-      document.removeEventListener('mousedown', handleTouchOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
-  // 1. Dados para o gráfico de Donut de Alocação por Classe
-  const allocationData = portfolio.alocacaoPercentual.map((item, idx) => ({
-    name: item.tipo,
-    value: parseFloat(item.total),
-    percentual: parseFloat(item.percentual),
-    color: ALLOCATION_COLORS[idx % ALLOCATION_COLORS.length],
-  }));
+  // Mapeamento dinâmico de Ticker -> Tipo de Ativo
+  const tickerTypeMap = useMemo(() => {
+    const map = new Map<string, string>();
+    portfolio.posicoesCustodia.forEach(p => map.set(p.ticker, p.asset.tipo));
+    portfolio.posicoesZeradas.forEach(p => map.set(p.ticker, p.asset.tipo));
+    return map;
+  }, [portfolio.posicoesCustodia, portfolio.posicoesZeradas]);
 
-  // 2. Dados para o gráfico de Top Ativos por Peso em Carteira
-  const topAssetsData = portfolio.posicoesCustodia.slice(0, 7).map((pos, idx) => ({
-    name: pos.ticker,
-    fullName: pos.asset.nome,
-    tipo: pos.asset.tipo,
-    valor: parseFloat(pos.valorAtual),
-    percentual: parseFloat(pos.percentualCarteira),
-    color: ASSET_COLORS[idx % ASSET_COLORS.length],
-  }));
+  // Lista de classes disponíveis na carteira
+  const availableClasses = useMemo(() => {
+    const types = new Set<string>();
+    portfolio.posicoesCustodia.forEach(p => types.add(p.asset.tipo));
+    portfolio.posicoesZeradas.forEach(p => types.add(p.asset.tipo));
+    return Array.from(types);
+  }, [portfolio.posicoesCustodia, portfolio.posicoesZeradas]);
 
-  // 3. Evolução Acumulada de Aportes vs Valor Patrimonial Atual ao longo dos meses
-  const monthlyTimeline = React.useMemo(() => {
-    const validOps = operations
+  const classLabelMap: Record<string, string> = {
+    AÇÃO: 'Ações',
+    FII: 'FIIs',
+    ETF: 'ETFs Intern.',
+    BDR: 'Stocks',
+    TESOURO: 'Tesouro / Renda Fixa',
+    OUTROS: 'Outros',
+  };
+
+  // Opções para os dropdowns de filtro por tipo
+  const typeFilterOptions = useMemo(() => {
+    const list = [{ id: 'TODOS', label: 'Todos os tipos' }];
+    availableClasses.forEach(t => {
+      list.push({
+        id: t,
+        label: classLabelMap[t] || t,
+      });
+    });
+    return list;
+  }, [availableClasses]);
+
+  // =========================================================================
+  // 1. DADOS DO GRÁFICO CÍRCULO (DONUT) — "Ativos na Carteira"
+  // =========================================================================
+  const donutData = useMemo(() => {
+    const patrimonioTotalNum = parseFloat(portfolio.patrimonioTotal) || 0;
+
+    // Cenário A: "Todos os tipos" (Visão Macro por Classe)
+    if (selectedDonutType === 'TODOS') {
+      const items = portfolio.alocacaoPercentual.map((item, idx) => ({
+        id: item.tipo,
+        name: classLabelMap[item.tipo] || item.tipo,
+        fullName: `${classLabelMap[item.tipo] || item.tipo} em Custódia`,
+        value: parseFloat(item.total) || 0,
+        percentual: parseFloat(item.percentual) || 0,
+        color: PALETTE_COLORS[idx % PALETTE_COLORS.length],
+      }));
+
+      return {
+        items,
+        totalValue: patrimonioTotalNum,
+        totalLabel: 'Total',
+      };
+    }
+
+    // Cenário B: Classe Específica selecionada (Drill-down: exibe os ativos dessa classe)
+    const filteredPositions = portfolio.posicoesCustodia
+      .filter(p => p.asset.tipo === selectedDonutType)
+      .sort((a, b) => parseFloat(b.valorAtual) - parseFloat(a.valorAtual));
+
+    const classTotal = filteredPositions.reduce((sum, p) => sum + (parseFloat(p.valorAtual) || 0), 0);
+
+    const items = filteredPositions.map((pos, idx) => {
+      const val = parseFloat(pos.valorAtual) || 0;
+      const pct = classTotal > 0 ? (val / classTotal) * 100 : 0;
+      return {
+        id: pos.ticker,
+        name: pos.ticker,
+        fullName: pos.asset.nome,
+        value: val,
+        percentual: Math.round(pct * 100) / 100,
+        color: PALETTE_COLORS[idx % PALETTE_COLORS.length],
+      };
+    });
+
+    return {
+      items,
+      totalValue: classTotal,
+      totalLabel: classLabelMap[selectedDonutType] || selectedDonutType,
+    };
+  }, [portfolio, selectedDonutType]);
+
+  const activeDonutSlice =
+    selectedDonutSliceIndex !== null && donutData.items[selectedDonutSliceIndex]
+      ? donutData.items[selectedDonutSliceIndex]
+      : null;
+
+  // =========================================================================
+  // 2. DADOS DO GRÁFICO — "Evolução do Patrimônio" (Barras Empilhadas)
+  // =========================================================================
+  const evolutionData = useMemo(() => {
+    let validOps = operations
       .filter(op => op.status === 'CONFIRMADA' || op.status === 'ARREDONDADA')
       .sort((a, b) => a.dataPregao.localeCompare(b.dataPregao));
+
+    // Filtra por tipo de ativo se não for "TODOS"
+    if (evolutionTypeFilter !== 'TODOS') {
+      validOps = validOps.filter(op => tickerTypeMap.get(op.ticker) === evolutionTypeFilter);
+    }
 
     if (validOps.length === 0) return [];
 
@@ -133,34 +253,59 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
     let acumuladoCusto = 0;
     const sortedMonths = Array.from(monthMap.keys()).sort();
 
-    return sortedMonths.map((m, idx) => {
+    const fullSeries = sortedMonths.map((m, idx) => {
       const info = monthMap.get(m)!;
       acumuladoCusto += info.aportes - info.retiradas;
       if (acumuladoCusto < 0) acumuladoCusto = 0;
 
       const [year, monthNum] = m.split('-');
-      const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-      const monthIndex = parseInt(monthNum || '1', 10) - 1;
-      const label = `${monthNames[monthIndex] || 'Mês'}/${(year || '').slice(2)}`;
+      const monthLabel = `${monthNum}/${(year || '').slice(2)}`;
 
-      const ratio = parseFloat(portfolio.patrimonioTotal) / (parseFloat(portfolio.custoTotalInvestido) || 1);
+      const ratio =
+        parseFloat(portfolio.patrimonioTotal) / (parseFloat(portfolio.custoTotalInvestido) || 1);
       const isLast = idx === sortedMonths.length - 1;
       const patrimonioEstimado = isLast
         ? parseFloat(portfolio.patrimonioTotal)
         : acumuladoCusto * (1 + (ratio - 1) * ((idx + 1) / sortedMonths.length));
 
+      const custoFinal = Math.round(acumuladoCusto * 100) / 100;
+      const patrimonioFinal = Math.round(patrimonioEstimado * 100) / 100;
+      const ganhoCapital = Math.max(0, Math.round((patrimonioFinal - custoFinal) * 100) / 100);
+
       return {
-        mes: label,
+        mes: monthLabel,
         mesRaw: m,
-        custoAportado: Math.round(acumuladoCusto * 100) / 100,
-        patrimonio: Math.round(patrimonioEstimado * 100) / 100,
-        operacoesNoMes: info.count,
+        valorAplicado: custoFinal,
+        ganhoCapital: ganhoCapital,
+        patrimonioTotal: patrimonioFinal,
       };
     });
-  }, [operations, portfolio]);
 
-  // 4. Histórico Mensal de Proventos Recebidos
-  const monthlyDividends = React.useMemo(() => {
+    // Filtra pelo período selecionado
+    if (evolutionPeriod === '12M') {
+      return fullSeries.slice(-12);
+    } else if (evolutionPeriod === '2Y') {
+      return fullSeries.slice(-24);
+    } else if (evolutionPeriod === '5Y') {
+      return fullSeries.slice(-60);
+    }
+    return fullSeries; // 'ALL'
+  }, [operations, evolutionTypeFilter, evolutionPeriod, portfolio, tickerTypeMap]);
+
+  // 3. Top Ativos por Peso em Carteira
+  const topAssetsData = useMemo(() => {
+    return portfolio.posicoesCustodia.slice(0, 7).map((pos, idx) => ({
+      name: pos.ticker,
+      fullName: pos.asset.nome,
+      tipo: pos.asset.tipo,
+      valor: parseFloat(pos.valorAtual),
+      percentual: parseFloat(pos.percentualCarteira),
+      color: ASSET_COLORS[idx % ASSET_COLORS.length],
+    }));
+  }, [portfolio.posicoesCustodia]);
+
+  // 4. Histórico Mensal de Proventos
+  const monthlyDividends = useMemo(() => {
     const map = new Map<string, number>();
     dividends.forEach(d => {
       if (d.status === 'RECEBIDO') {
@@ -174,333 +319,535 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
     const sortedMonths = Array.from(map.keys()).sort();
     return sortedMonths.map(m => {
       const [year, monthNum] = m.split('-');
-      const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-      const monthIndex = parseInt(monthNum || '1', 10) - 1;
-      const label = `${monthNames[monthIndex] || 'Mês'}/${(year || '').slice(2)}`;
+      const monthLabel = `${monthNum}/${(year || '').slice(2)}`;
       return {
-        mes: label,
+        mes: monthLabel,
         proventos: Math.round((map.get(m) || 0) * 100) / 100,
       };
     });
   }, [dividends]);
 
-  const selectedClass = selectedClassIndex !== null ? allocationData[selectedClassIndex] : null;
-
   return (
     <div ref={containerRef} className="space-y-6 select-none chart-card-container">
-      {/* Grade de 2 Gráficos de Alto Nível: Evolução Histórica e Alocação por Classe */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Gráfico 1: Curva de Evolução Patrimonial */}
-        <div className="lg:col-span-2 p-4 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between select-none">
+      {/* ========================================================================= */}
+      {/* GRADE PRINCIPAL: EVOLUÇÃO DO PATRIMÔNIO + ATIVOS NA CARTEIRA (DONUT)      */}
+      {/* ========================================================================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* ----------------------------------------------------------------------- */}
+        {/* CARD 1: EVOLUÇÃO DO PATRIMÔNIO (Estilo Exato dos Prints 5, 6, 7)         */}
+        {/* ----------------------------------------------------------------------- */}
+        <div className="lg:col-span-7 p-4 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between select-none">
           <div>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-                  <span>Evolução Patrimonial: Aportes vs Patrimônio Atual</span>
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>Evolução do Patrimônio</span>
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Visualização da curva de acúmulo contínuo e ganho de capital
-                </p>
               </div>
 
-              <div className="flex items-center gap-3 text-xs">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-sm bg-blue-600"></span>
-                  <span className="text-slate-600 dark:text-slate-400 font-medium">Patrimônio Líquido</span>
+              {/* Controles de Filtros: Período e Tipo de Ativo */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Dropdown 1: Período (Calendário) */}
+                <div className="relative" ref={periodDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsPeriodDropdownOpen(!isPeriodDropdownOpen);
+                      setIsEvolutionTypeDropdownOpen(false);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 transition-all cursor-pointer shadow-2xs"
+                  >
+                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                    <span>
+                      {evolutionPeriod === '12M'
+                        ? 'Últimos 12 Meses'
+                        : evolutionPeriod === '2Y'
+                        ? '2 Anos'
+                        : evolutionPeriod === '5Y'
+                        ? '5 Anos'
+                        : 'Desde o início'}
+                    </span>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 text-slate-400 transition-transform ${
+                        isPeriodDropdownOpen ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+
+                  {isPeriodDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-44 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-1.5 z-50 text-xs animate-in fade-in zoom-in-95">
+                      {[
+                        { id: 'ALL', label: 'Desde o início' },
+                        { id: '12M', label: 'Últimos 12 Meses' },
+                        { id: '2Y', label: '2 Anos' },
+                        { id: '5Y', label: '5 Anos' },
+                      ].map(p => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            setEvolutionPeriod(p.id);
+                            setIsPeriodDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-3.5 py-2 cursor-pointer transition-colors ${
+                            evolutionPeriod === p.id
+                              ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold'
+                              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-sm bg-slate-400 dark:bg-slate-600"></span>
-                  <span className="text-slate-600 dark:text-slate-400 font-medium">Custo Aportado</span>
+
+                {/* Dropdown 2: Tipo de Ativo ($) */}
+                <div className="relative" ref={evolutionTypeDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEvolutionTypeDropdownOpen(!isEvolutionTypeDropdownOpen);
+                      setIsPeriodDropdownOpen(false);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 transition-all cursor-pointer shadow-2xs"
+                  >
+                    <CircleDollarSign className="w-3.5 h-3.5 text-slate-400" />
+                    <span>
+                      {typeFilterOptions.find(t => t.id === evolutionTypeFilter)?.label ||
+                        'Todos os tipos'}
+                    </span>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 text-slate-400 transition-transform ${
+                        isEvolutionTypeDropdownOpen ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+
+                  {isEvolutionTypeDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-1.5 z-50 text-xs animate-in fade-in zoom-in-95">
+                      {typeFilterOptions.map(opt => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => {
+                            setEvolutionTypeFilter(opt.id);
+                            setIsEvolutionTypeDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-3.5 py-2 cursor-pointer transition-colors ${
+                            evolutionTypeFilter === opt.id
+                              ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold'
+                              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Alternador de Modo (Barras Empilhadas vs Área) */}
+                <div className="flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => setEvolutionChartMode('stacked-bars')}
+                    className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                      evolutionChartMode === 'stacked-bars'
+                        ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-2xs'
+                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                    }`}
+                    title="Visualizar em barras empilhadas"
+                  >
+                    <BarChart2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEvolutionChartMode('area')}
+                    className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                      evolutionChartMode === 'area'
+                        ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-2xs'
+                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                    }`}
+                    title="Visualizar em curva de área contínua"
+                  >
+                    <LineChart className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
             </div>
 
-            {/* Banner de Ponto Selecionado no Touch / Mobile */}
-            {selectedTimelinePoint && (
-              <div className="mb-3 p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-between text-xs animate-in fade-in">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="font-bold text-blue-900 dark:text-blue-300">
-                    {selectedTimelinePoint.mes}
-                  </span>
-                  <span className="text-slate-600 dark:text-slate-300">
-                    Patrimônio: <strong className="font-mono text-blue-600 dark:text-blue-400">{formatBRL(selectedTimelinePoint.patrimonio)}</strong>
-                  </span>
-                  <span className="text-slate-500">
-                    Custo: <strong className="font-mono">{formatBRL(selectedTimelinePoint.custoAportado)}</strong>
-                  </span>
-                  <span className={selectedTimelinePoint.patrimonio >= selectedTimelinePoint.custoAportado ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-red-500 font-bold'}>
-                    {selectedTimelinePoint.patrimonio >= selectedTimelinePoint.custoAportado ? '+' : ''}
-                    {formatBRL(selectedTimelinePoint.patrimonio - selectedTimelinePoint.custoAportado)}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedTimelinePoint(null)}
-                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                  title="Fechar detalhes"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+            {/* Legenda Oficial idêntica aos Prints: Valor Aplicado & Ganho de Capital */}
+            <div className="flex items-center justify-center gap-6 text-xs mb-3 py-1">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-xs bg-[#10b981] inline-block" />
+                <span className="text-slate-600 dark:text-slate-300 font-medium">
+                  Valor aplicado
+                </span>
               </div>
-            )}
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-xs bg-[#6ee7b7] inline-block" />
+                <span className="text-slate-600 dark:text-slate-300 font-medium">
+                  Ganho de Capital
+                </span>
+              </div>
+            </div>
 
-            {monthlyTimeline.length === 0 ? (
-              <div className="h-64 flex items-center justify-center text-xs text-slate-400">
-                Sem histórico de aportes registrado no cofre.
+            {evolutionData.length === 0 ? (
+              <div className="h-60 flex items-center justify-center text-xs text-slate-400">
+                Sem histórico de aportes para o filtro selecionado.
               </div>
             ) : (
-              <div className="h-60 sm:h-64 w-full pt-2 touch-pan-y">
+              <div className="h-60 w-full touch-pan-y">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={monthlyTimeline}
-                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                    onClick={(e: any) => {
-                      if (e && e.activePayload && e.activePayload.length) {
-                        const payload = e.activePayload[0].payload;
-                        if (selectedTimelinePoint?.mesRaw === payload.mesRaw) {
-                          setSelectedTimelinePoint(null);
-                        } else {
-                          setSelectedTimelinePoint(payload);
+                  {evolutionChartMode === 'stacked-bars' ? (
+                    <BarChart
+                      data={evolutionData}
+                      margin={{ top: 10, right: 10, left: -5, bottom: 0 }}
+                      onClick={(e: any) => {
+                        if (e && e.activePayload && e.activePayload.length) {
+                          setSelectedTimelinePoint(e.activePayload[0].payload);
                         }
-                      }
-                    }}
-                  >
-                    <defs>
-                      <linearGradient id="colorPatrimonio" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2563eb" stopOpacity={0.35} />
-                        <stop offset="95%" stopColor="#2563eb" stopOpacity={0.0} />
-                      </linearGradient>
-                      <linearGradient id="colorCusto" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#64748b" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="#64748b" stopOpacity={0.0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.15)" />
-                    <XAxis
-                      dataKey="mes"
-                      tickLine={false}
-                      axisLine={{ stroke: 'rgba(148, 163, 184, 0.2)' }}
-                      tick={{ fill: '#94a3b8', fontSize: 11 }}
-                    />
-                    <YAxis
-                      tickLine={false}
-                      axisLine={false}
-                      tick={{ fill: '#94a3b8', fontSize: 11 }}
-                      tickFormatter={val => `R$ ${(val / 1000).toFixed(0)}k`}
-                      domain={['auto', 'auto']}
-                    />
-                    <Tooltip
-                      isAnimationActive={false}
-                      wrapperStyle={{ pointerEvents: 'none', outline: 'none', zIndex: 40 }}
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          const lucro = data.patrimonio - data.custoAportado;
-                          return (
-                            <div className="bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur-md text-white p-3 rounded-xl shadow-xl border border-slate-700/60 text-xs space-y-1.5 pointer-events-none select-none">
-                              <p className="font-bold text-slate-300 border-b border-slate-800 pb-1">
-                                {data.mes}
-                              </p>
-                              <div className="flex justify-between gap-4">
-                                <span className="text-blue-400">Patrimônio:</span>
-                                <span className="font-mono font-bold">{formatBRL(data.patrimonio)}</span>
-                              </div>
-                              <div className="flex justify-between gap-4">
-                                <span className="text-slate-400">Custo Total:</span>
-                                <span className="font-mono">{formatBRL(data.custoAportado)}</span>
-                              </div>
-                              <div className="flex justify-between gap-4 pt-1 border-t border-slate-800/80">
-                                <span className={lucro >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-                                  {lucro >= 0 ? 'Lucro Não Realizado:' : 'Variação Negativa:'}
-                                </span>
-                                <span className={`font-mono font-bold ${lucro >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                  {formatBRL(lucro)}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        }
-                        return null;
                       }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="patrimonio"
-                      stroke="#2563eb"
-                      strokeWidth={2.5}
-                      fillOpacity={1}
-                      fill="url(#colorPatrimonio)"
-                      isAnimationActive={true}
-                      animationDuration={300}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="custoAportado"
-                      stroke="#94a3b8"
-                      strokeWidth={1.5}
-                      strokeDasharray="4 4"
-                      fillOpacity={1}
-                      fill="url(#colorCusto)"
-                      isAnimationActive={true}
-                      animationDuration={300}
-                    />
-                  </AreaChart>
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                        stroke="rgba(148, 163, 184, 0.15)"
+                      />
+                      <XAxis
+                        dataKey="mes"
+                        tickLine={false}
+                        axisLine={{ stroke: 'rgba(148, 163, 184, 0.2)' }}
+                        tick={{ fill: '#94a3b8', fontSize: 11 }}
+                      />
+                      <YAxis
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: '#94a3b8', fontSize: 11 }}
+                        tickFormatter={val => `R$ ${(val / 1000).toFixed(0)}k`}
+                      />
+                      <Tooltip
+                        isAnimationActive={false}
+                        wrapperStyle={{ pointerEvents: 'none', outline: 'none', zIndex: 40 }}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div className="bg-slate-900/95 dark:bg-slate-950/95 text-white p-3 rounded-xl shadow-xl border border-slate-700/60 text-xs space-y-1.5 pointer-events-none select-none">
+                                <p className="font-bold text-slate-300 border-b border-slate-800 pb-1">
+                                  {data.mes}
+                                </p>
+                                <div className="flex justify-between gap-4">
+                                  <span className="text-emerald-400">Valor aplicado:</span>
+                                  <span className="font-mono font-bold">
+                                    {formatBRL(data.valorAplicado)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between gap-4">
+                                  <span className="text-teal-300">Ganho de Capital:</span>
+                                  <span className="font-mono font-bold">
+                                    +{formatBRL(data.ganhoCapital)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between gap-4 pt-1 border-t border-slate-800 text-blue-300">
+                                  <span>Patrimônio Total:</span>
+                                  <span className="font-mono font-bold">
+                                    {formatBRL(data.patrimonioTotal)}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      {/* Barra 1 (Base): Valor Aplicado */}
+                      <Bar
+                        dataKey="valorAplicado"
+                        stackId="patrimonio"
+                        fill="#10b981"
+                        maxBarSize={36}
+                      />
+                      {/* Barra 2 (Topo): Ganho de Capital */}
+                      <Bar
+                        dataKey="ganhoCapital"
+                        stackId="patrimonio"
+                        fill="#6ee7b7"
+                        radius={[4, 4, 0, 0]}
+                        maxBarSize={36}
+                      />
+                    </BarChart>
+                  ) : (
+                    <AreaChart
+                      data={evolutionData}
+                      margin={{ top: 10, right: 10, left: -5, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="colorPatrimonio" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                        stroke="rgba(148, 163, 184, 0.15)"
+                      />
+                      <XAxis
+                        dataKey="mes"
+                        tickLine={false}
+                        axisLine={{ stroke: 'rgba(148, 163, 184, 0.2)' }}
+                        tick={{ fill: '#94a3b8', fontSize: 11 }}
+                      />
+                      <YAxis
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: '#94a3b8', fontSize: 11 }}
+                        tickFormatter={val => `R$ ${(val / 1000).toFixed(0)}k`}
+                      />
+                      <Tooltip
+                        isAnimationActive={false}
+                        wrapperStyle={{ pointerEvents: 'none', outline: 'none', zIndex: 40 }}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div className="bg-slate-900/95 dark:bg-slate-950/95 text-white p-3 rounded-xl shadow-xl border border-slate-700/60 text-xs space-y-1.5 pointer-events-none select-none">
+                                <p className="font-bold text-slate-300 border-b border-slate-800 pb-1">
+                                  {data.mes}
+                                </p>
+                                <div className="flex justify-between gap-4">
+                                  <span className="text-emerald-400">Patrimônio:</span>
+                                  <span className="font-mono font-bold">
+                                    {formatBRL(data.patrimonioTotal)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between gap-4">
+                                  <span className="text-slate-400">Valor aplicado:</span>
+                                  <span className="font-mono">
+                                    {formatBRL(data.valorAplicado)}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="patrimonioTotal"
+                        stroke="#10b981"
+                        strokeWidth={2.5}
+                        fill="url(#colorPatrimonio)"
+                      />
+                    </AreaChart>
+                  )}
                 </ResponsiveContainer>
               </div>
             )}
-          </div>
-
-          <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
-            <span>Última reconciliação contábil</span>
-            <span className="font-medium text-slate-700 dark:text-slate-300">
-              Patrimônio Líquido Atual: <strong className="text-blue-600 dark:text-blue-400 font-mono-numbers">{formatBRL(portfolio.patrimonioTotal)}</strong>
-            </span>
           </div>
         </div>
 
-        {/* Gráfico 2: Donut Interativo de Alocação por Classe de Ativos */}
-        <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between select-none">
+        {/* ----------------------------------------------------------------------- */}
+        {/* CARD 2: ATIVOS NA CARTEIRA (Donut Drill-down — Prints 1, 2, 3, 4)       */}
+        {/* ----------------------------------------------------------------------- */}
+        <div className="lg:col-span-5 p-4 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between select-none">
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                <span>Divisão por Classe</span>
+            {/* Cabeçalho com Dropdown "Todos os tipos / Ações / FIIs / ETFs..." */}
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>Ativos na Carteira</span>
               </h3>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-semibold">
-                {allocationData.length} classes
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
-              Toque em uma fatia para filtrar e ver detalhes
-            </p>
 
-            {allocationData.length === 0 ? (
-              <div className="h-48 flex items-center justify-center text-xs text-slate-400">
-                Sem posições ativas para gerar o donut.
+              <div className="relative" ref={donutDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsDonutDropdownOpen(!isDonutDropdownOpen)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 transition-all cursor-pointer shadow-2xs"
+                >
+                  <CircleDollarSign className="w-3.5 h-3.5 text-slate-400" />
+                  <span>
+                    {typeFilterOptions.find(t => t.id === selectedDonutType)?.label ||
+                      'Todos os tipos'}
+                  </span>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 text-slate-400 transition-transform ${
+                      isDonutDropdownOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+
+                {isDonutDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-1.5 z-50 text-xs animate-in fade-in zoom-in-95">
+                    {typeFilterOptions.map(opt => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedDonutType(opt.id);
+                          setSelectedDonutSliceIndex(null);
+                          setIsDonutDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3.5 py-2 cursor-pointer transition-colors ${
+                          selectedDonutType === opt.id
+                            ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold'
+                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {donutData.items.length === 0 ? (
+              <div className="h-60 flex items-center justify-center text-xs text-slate-400">
+                Nenhum ativo encontrado para esta categoria.
               </div>
             ) : (
-              <div className="h-48 w-full relative touch-pan-y">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={allocationData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={74}
-                      paddingAngle={3}
-                      dataKey="value"
-                      isAnimationActive={true}
-                      animationDuration={300}
-                      onClick={(_, index) => {
-                        setSelectedClassIndex(prev => (prev === index ? null : index));
-                      }}
-                      cursor="pointer"
-                    >
-                      {allocationData.map((entry, index) => {
-                        const isSelected = selectedClassIndex === index;
-                        return (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={entry.color}
-                            stroke={isSelected ? '#ffffff' : 'transparent'}
-                            strokeWidth={isSelected ? 3 : 0}
-                            style={{
-                              transform: isSelected ? 'scale(1.05)' : 'scale(1)',
-                              transformOrigin: 'center center',
-                              transition: 'transform 0.15s ease-out',
-                            }}
-                          />
-                        );
-                      })}
-                    </Pie>
-                    <Tooltip
-                      isAnimationActive={false}
-                      wrapperStyle={{ pointerEvents: 'none', outline: 'none', zIndex: 40 }}
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
+              <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
+                {/* Lado Esquerdo: Donut Chart com o anel e centro */}
+                <div className="w-full sm:w-[48%] h-56 relative flex items-center justify-center shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={donutData.items}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={52}
+                        outerRadius={78}
+                        paddingAngle={donutData.items.length > 1 ? 2.5 : 0}
+                        dataKey="value"
+                        onClick={(_, idx) => {
+                          setSelectedDonutSliceIndex(prev => (prev === idx ? null : idx));
+                        }}
+                        cursor="pointer"
+                      >
+                        {donutData.items.map((entry, index) => {
+                          const isSelected = selectedDonutSliceIndex === index;
                           return (
-                            <div className="bg-slate-900/95 dark:bg-slate-950/95 text-white p-2.5 rounded-xl shadow-lg border border-slate-700/60 text-xs pointer-events-none select-none">
-                              <p className="font-bold">{data.name}</p>
-                              <p className="text-slate-300 font-mono">
-                                {formatBRL(data.value)} ({formatPercent(data.percentual)})
-                              </p>
-                            </div>
+                            <Cell
+                              key={`donut-slice-${index}`}
+                              fill={entry.color}
+                              stroke={isSelected ? '#ffffff' : 'transparent'}
+                              strokeWidth={isSelected ? 3 : 0}
+                              style={{
+                                transform: isSelected ? 'scale(1.04)' : 'scale(1)',
+                                transformOrigin: 'center center',
+                                transition: 'transform 0.15s ease-out',
+                              }}
+                            />
                           );
-                        }
-                        return null;
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+                        })}
+                      </Pie>
+                      <Tooltip
+                        isAnimationActive={false}
+                        wrapperStyle={{ pointerEvents: 'none', outline: 'none', zIndex: 40 }}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div className="bg-slate-900/95 dark:bg-slate-950/95 text-white p-2.5 rounded-xl shadow-lg border border-slate-700/60 text-xs pointer-events-none select-none">
+                                <p className="font-bold">{data.name}</p>
+                                <p className="text-slate-300 font-mono">
+                                  {formatBRL(data.value)} ({data.percentual.toFixed(2).replace('.', ',')}%)
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
 
-                {/* Centro do Donut com Conteúdo Dinâmico */}
-                <div 
-                  onClick={() => setSelectedClassIndex(null)}
-                  className="absolute inset-0 flex flex-col items-center justify-center pointer-events-auto cursor-pointer"
-                  title={selectedClass ? "Toque para voltar ao total" : undefined}
-                >
-                  {selectedClass ? (
-                    <>
-                      <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider truncate max-w-[90px]">
-                        {selectedClass.name}
-                      </span>
-                      <span className="text-xs font-bold text-slate-900 dark:text-white font-mono-numbers">
-                        {formatPercent(selectedClass.percentual)}
-                      </span>
-                      <span className="text-[9px] text-slate-400 mt-0.5">toque p/ limpar</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Total</span>
-                      <span className="text-xs font-bold text-slate-900 dark:text-white font-mono-numbers">
-                        {formatBRL(portfolio.patrimonioTotal)}
-                      </span>
-                    </>
-                  )}
+                  {/* Informação Central do Donut — pointer-events-none para não bloquear as fatias */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedDonutSliceIndex(null);
+                      }}
+                      className="w-24 h-24 rounded-full flex flex-col items-center justify-center text-center pointer-events-auto cursor-pointer"
+                      title={activeDonutSlice ? 'Toque para limpar seleção' : undefined}
+                    >
+                      {activeDonutSlice ? (
+                        <>
+                          <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider truncate max-w-[80px]">
+                            {activeDonutSlice.name}
+                          </span>
+                          <span className="text-xs font-bold text-slate-900 dark:text-white font-mono-numbers">
+                            {activeDonutSlice.percentual.toFixed(2).replace('.', ',')}%
+                          </span>
+                          <span className="text-[9px] text-slate-400 mt-0.5">limpar</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider truncate max-w-[80px]">
+                            {donutData.totalLabel}
+                          </span>
+                          <span className="text-xs font-bold text-slate-900 dark:text-white font-mono-numbers">
+                            {formatBRL(donutData.totalValue)}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lado Direito: Lista de Ativos/Classes com Rolagem Suave (Prints 1, 2, 3) */}
+                <div className="w-full sm:w-[52%] max-h-56 overflow-y-auto pr-1 space-y-1.5 custom-scrollbar">
+                  {donutData.items.map((item, idx) => {
+                    const isSelected = selectedDonutSliceIndex === idx;
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() =>
+                          setSelectedDonutSliceIndex(prev => (prev === idx ? null : idx))
+                        }
+                        className={`flex items-center justify-between text-xs py-1.5 px-2 rounded-lg transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-blue-50 dark:bg-blue-950/60 ring-1 ring-blue-500'
+                            : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0 pr-2">
+                          <span
+                            className="w-3.5 h-3.5 rounded-xs shrink-0"
+                            style={{ backgroundColor: item.color }}
+                          />
+                          <span
+                            className="font-semibold text-slate-800 dark:text-slate-200 truncate"
+                            title={item.name}
+                          >
+                            {item.name}
+                          </span>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="font-mono font-bold text-slate-700 dark:text-slate-300 tabular-nums">
+                            {item.percentual.toFixed(2).replace('.', ',')}%
+                          </div>
+                          <div className="font-mono text-[10px] text-slate-400">
+                            {formatBRL(item.value)}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
-
-            {/* Legenda com botões de seleção rápida no toque */}
-            <div className="mt-3 space-y-1.5 max-h-36 overflow-y-auto pr-1">
-              {allocationData.map((item, idx) => {
-                const isSelected = selectedClassIndex === idx;
-                return (
-                  <button
-                    key={item.name}
-                    type="button"
-                    onClick={() => setSelectedClassIndex(prev => (prev === idx ? null : idx))}
-                    className={`w-full flex items-center justify-between text-xs p-1.5 rounded-xl transition-colors cursor-pointer ${
-                      isSelected
-                        ? 'bg-blue-50 dark:bg-blue-950/60 ring-1 ring-blue-500'
-                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="w-2.5 h-2.5 rounded-full shrink-0"
-                        style={{ backgroundColor: item.color }}
-                      ></span>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">{item.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-slate-500">{formatBRL(item.value)}</span>
-                      <span className="font-bold text-slate-900 dark:text-white font-mono min-w-[42px] text-right">
-                        {formatPercent(item.percentual)}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Grade Secundária: Gráficos de Repartição por Ativo & Proventos Mensais */}
+      {/* ========================================================================= */}
+      {/* GRADE SECUNDÁRIA: TOP ATIVOS POR PESO & PROVENTOS MENSAIS                  */}
+      {/* ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Gráfico 3: Repartição de Ativos (Top Holdings por Peso) */}
         <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between select-none">
@@ -521,10 +868,18 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
               <div className="mb-2 p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-between text-xs animate-in fade-in">
                 <div>
                   <strong className="text-indigo-900 dark:text-indigo-300">
-                    {topAssetsData[selectedAssetIndex].name} — {topAssetsData[selectedAssetIndex].fullName}
+                    {topAssetsData[selectedAssetIndex].name} —{' '}
+                    {topAssetsData[selectedAssetIndex].fullName}
                   </strong>
                   <div className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
-                    Valor: <span className="font-mono font-bold text-blue-600 dark:text-blue-400">{formatBRL(topAssetsData[selectedAssetIndex].valor)}</span> • Participação: <span className="font-mono font-bold">{formatPercent(topAssetsData[selectedAssetIndex].percentual)}</span>
+                    Valor:{' '}
+                    <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
+                      {formatBRL(topAssetsData[selectedAssetIndex].valor)}
+                    </span>{' '}
+                    • Participação:{' '}
+                    <span className="font-mono font-bold">
+                      {formatPercent(topAssetsData[selectedAssetIndex].percentual)}
+                    </span>
                   </div>
                 </div>
                 <button
@@ -549,14 +904,20 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
                     data={topAssetsData}
                     layout="vertical"
                     margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
-                    onClick={(e) => {
-                      if (e && e.activeTooltipIndex !== undefined) {
+                    onClick={e => {
+                      if (e && e.activeTooltipIndex !== undefined && e.activeTooltipIndex !== null) {
                         const idx = Number(e.activeTooltipIndex);
                         setSelectedAssetIndex(prev => (prev === idx ? null : idx));
+                      } else {
+                        setSelectedAssetIndex(null);
                       }
                     }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(148, 163, 184, 0.15)" />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      horizontal={false}
+                      stroke="rgba(148, 163, 184, 0.15)"
+                    />
                     <XAxis
                       type="number"
                       tickLine={false}
@@ -579,25 +940,39 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
                           const data = payload[0].payload;
                           return (
                             <div className="bg-slate-900/95 dark:bg-slate-950/95 text-white p-3 rounded-xl shadow-lg border border-slate-700/60 text-xs space-y-1 pointer-events-none select-none">
-                              <p className="font-bold">{data.name} — {data.fullName}</p>
-                              <p className="text-slate-400">Classe: <span className="text-slate-200">{data.tipo}</span></p>
-                              <p className="text-blue-400 font-mono font-bold">Valor Atual: {formatBRL(data.valor)}</p>
-                              <p className="text-slate-300 font-mono">Participação: {formatPercent(data.percentual)}</p>
+                              <p className="font-bold">
+                                {data.name} — {data.fullName}
+                              </p>
+                              <p className="text-slate-400">
+                                Classe: <span className="text-slate-200">{data.tipo}</span>
+                              </p>
+                              <p className="text-blue-400 font-mono font-bold">
+                                Valor Atual: {formatBRL(data.valor)}
+                              </p>
+                              <p className="text-slate-300 font-mono">
+                                Participação: {formatPercent(data.percentual)}
+                              </p>
                             </div>
                           );
                         }
                         return null;
                       }}
                     />
-                    <Bar dataKey="valor" radius={[0, 6, 6, 0]} cursor="pointer">
+                    <Bar dataKey="valor" radius={[0, 6, 6, 0]} maxBarSize={20} cursor="pointer">
                       {topAssetsData.map((entry, index) => {
                         const isSelected = selectedAssetIndex === index;
                         return (
                           <Cell
                             key={`bar-${index}`}
                             fill={entry.color}
-                            stroke={isSelected ? '#ffffff' : 'transparent'}
-                            strokeWidth={isSelected ? 2 : 0}
+                            opacity={selectedAssetIndex === null || isSelected ? 1 : 0.35}
+                            stroke="none"
+                            strokeWidth={0}
+                            style={{ outline: 'none' }}
+                            onClick={(ev) => {
+                              ev?.stopPropagation?.();
+                              setSelectedAssetIndex(prev => (prev === index ? null : index));
+                            }}
                           />
                         );
                       })}
@@ -611,7 +986,10 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
           <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 flex justify-between">
             <span>Diversificação da carteira</span>
             <span className="font-medium text-slate-700 dark:text-slate-300">
-              Total de ativos: <strong className="text-slate-900 dark:text-white">{portfolio.posicoesCustodia.length}</strong>
+              Total de ativos:{' '}
+              <strong className="text-slate-900 dark:text-white">
+                {portfolio.posicoesCustodia.length}
+              </strong>
             </span>
           </div>
         </div>
@@ -672,10 +1050,16 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
                         } else {
                           setSelectedDividendPoint(payload);
                         }
+                      } else {
+                        setSelectedDividendPoint(null);
                       }
                     }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.15)" />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="rgba(148, 163, 184, 0.15)"
+                    />
                     <XAxis
                       dataKey="mes"
                       tickLine={false}
@@ -706,7 +1090,31 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
                         return null;
                       }}
                     />
-                    <Bar dataKey="proventos" fill="#10b981" radius={[6, 6, 0, 0]} cursor="pointer" />
+                    <Bar
+                      dataKey="proventos"
+                      fill="#10b981"
+                      radius={[6, 6, 0, 0]}
+                      maxBarSize={28}
+                      cursor="pointer"
+                    >
+                      {monthlyDividends.map((entry, index) => {
+                        const isSelected = selectedDividendPoint?.mes === entry.mes;
+                        return (
+                          <Cell
+                            key={`cell-div-${index}`}
+                            fill="#10b981"
+                            opacity={selectedDividendPoint === null || isSelected ? 1 : 0.35}
+                            stroke="none"
+                            strokeWidth={0}
+                            style={{ outline: 'none' }}
+                            onClick={(ev) => {
+                              ev?.stopPropagation?.();
+                              setSelectedDividendPoint(prev => (prev?.mes === entry.mes ? null : entry));
+                            }}
+                          />
+                        );
+                      })}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
