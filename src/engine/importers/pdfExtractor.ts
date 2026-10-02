@@ -5,7 +5,7 @@
 
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Configura o worker do PDF.js servido localmente e deterministicamente
+// Configura o worker do PDF.js servido localmente e de forma determinística
 if (typeof window !== 'undefined') {
   try {
     pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
@@ -22,15 +22,15 @@ export interface PdfExtractionResult {
 }
 
 /**
- * Extrai texto completo de um arquivo PDF ou TXT no próprio navegador do usuário,
- * 100% offline e privado, preservando a ordenação das linhas e colunas.
+ * Extrai texto completo de notas de corretagem (PDF ou TXT) no próprio navegador do usuário,
+ * 100% offline e privado, preservando a ordenação das linhas e dos dados da nota.
  */
 export async function extractTextFromPdf(
   fileOrBuffer: File | ArrayBuffer | string,
   onProgress?: (currentPage: number, totalPages: number) => void,
   password?: string
 ): Promise<PdfExtractionResult> {
-  // 1. Suporte a texto direto (colado pelo usuário ou mock de teste)
+  // 1. Suporte a texto direto (colado pelo usuário)
   if (typeof fileOrBuffer === 'string') {
     const rawLines = fileOrBuffer.split('\n').map(l => l.trim()).filter(Boolean);
     return {
@@ -54,7 +54,7 @@ export async function extractTextFromPdf(
     }
   }
 
-  // 3. Processamento de PDF via PDF.js
+  // 3. Processamento de PDF de nota de corretagem via PDF.js
   let arrayBuffer: ArrayBuffer;
   if (fileOrBuffer instanceof File) {
     arrayBuffer = await fileOrBuffer.arrayBuffer();
@@ -62,7 +62,6 @@ export async function extractTextFromPdf(
     arrayBuffer = fileOrBuffer;
   }
 
-  // Garante que o workerSrc esteja configurado
   if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
   }
@@ -73,7 +72,6 @@ export async function extractTextFromPdf(
     password: password || undefined,
   });
 
-  // Captura requisição interativa de senha do PDF sem quebrar em iframes
   (loadingTask as any).onPassword = (callback: (password: string | Error) => void, reason: number) => {
     try {
       if (password) {
@@ -84,7 +82,7 @@ export async function extractTextFromPdf(
       if (promptFn) {
         const userPass = promptFn(
           reason === 1
-            ? 'Este PDF de nota de corretagem está protegido por senha (geralmente CPF ou data de nascimento). Digite a senha:'
+            ? 'Este PDF de nota de corretagem está protegido por senha. Digite a senha:'
             : 'Senha incorreta. Tente novamente:'
         );
         if (userPass) {

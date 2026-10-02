@@ -41,7 +41,7 @@ const KEYS = {
 const DEFAULT_SETTINGS: SystemSettings = {
   theme: 'escuro',
   lockTimeoutMinutes: 15,
-  brapiApiKey: '',
+  brapiApiKey: (import.meta.env.VITE_BRAPI_API_KEY as string) || '',
   mostrarCuriosidadesHermas: true,
   vaultSalt: '4f8b9a2c1d0e5f67a8b9c0d1e2f3a4b5',
   vaultKeyCheck: 'hermas_master_key_check_hash',
@@ -240,6 +240,10 @@ export const HermasDB = {
         },
       ]);
     }
+
+    // Purga automaticamente quaisquer operações órfãs de notas que tenham sido deletadas anteriormente
+    this.cleanupOrphanedDocumentOperations();
+    this.cleanupCorruptedProventosOperations();
   },
 
   getAssets(): Asset[] {
@@ -350,15 +354,104 @@ export const HermasDB = {
   },
 
   deleteDocument(id: string, deleteAssociatedOps = true) {
-    const list = this.getDocuments().filter(d => d.id !== id);
+    const docs = this.getDocuments();
+    const docToDelete = docs.find(d => d.id === id);
+    const list = docs.filter(d => d.id !== id);
     setStored(KEYS.DOCUMENTS, list);
 
     if (deleteAssociatedOps) {
-      const ops = this.getOperations().filter(o => o.notaCorretagemId !== id);
+      const candidateIds = new Set(docToDelete?.candidatosOperacoes?.map(c => c.id) || []);
+      const numNota = docToDelete?.numeroNota;
+
+      const ops = this.getOperations().filter(o => {
+        // Se notaCorretagemId bate com o id do documento
+        if (o.notaCorretagemId === id) return false;
+        // Se bate com o id de alguma operação salva como candidata desse documento
+        if (candidateIds.has(o.id)) return false;
+        // Se notaCorretagemId contém o número da nota
+        if (numNota && o.notaCorretagemId && o.notaCorretagemId.includes(numNota)) return false;
+        // Se observações ou comprovante mencionam expressamente o número da nota
+        if (numNota && ((o.observacoes && o.observacoes.includes(numNota)) || (o.comprovante && o.comprovante.includes(numNota)))) {
+          return false;
+        }
+        return true;
+      });
       setStored(KEYS.OPERATIONS, ops);
+
+      // Também remove eventuais proventos associados a esta nota
+      const divs = this.getDividends().filter(d => {
+        if (d.origem && d.origem.includes(id)) return false;
+        if (numNota && d.origem && d.origem.includes(numNota)) return false;
+        return true;
+      });
+      setStored(KEYS.DIVIDENDS, divs);
     }
 
-    this.logAudit('EXCLUIR_DOCUMENTO', 'Document', `Nota/Documento ${id} removido.`);
+    this.cleanupOrphanedDocumentOperations();
+    this.logAudit('EXCLUIR_DOCUMENTO', 'Document', `Nota/Documento ${id} e operações vinculadas removidos.`);
+  },
+
+  cleanupOrphanedDocumentOperations(): number {
+    const docs = this.getDocuments();
+    const validDocIds = new Set(docs.map(d => d.id));
+    const validNotas = new Set(docs.map(d => d.numeroNota).filter(Boolean));
+
+    const currentOps = this.getOperations();
+    const cleanOps = currentOps.filter(o => {
+      // Operações manuais (sem nota nem comprovante de nota) são sempre preservadas
+      if (!o.notaCorretagemId && !o.comprovante?.includes('Nota nº')) return true;
+
+      // Se possui id de nota e o documento existe no cofre
+      if (o.notaCorretagemId && validDocIds.has(o.notaCorretagemId)) return true;
+
+      // Se o comprovante ou notaCorretagemId possui o número de alguma nota que ainda existe
+      const matchesExisting = Array.from(validNotas).some(
+        num =>
+          (o.notaCorretagemId && o.notaCorretagemId.includes(num!)) ||
+          (o.comprovante && o.comprovante.includes(num!)) ||
+          (o.observacoes && o.observacoes.includes(num!))
+      );
+      if (matchesExisting) return true;
+
+      // Caso contrário, a nota dessa operação já foi excluída do cofre: purga operação órfã!
+      return false;
+    });
+
+    const removedCount = currentOps.length - cleanOps.length;
+    if (removedCount > 0) {
+      setStored(KEYS.OPERATIONS, cleanOps);
+      this.logAudit('LIMPEZA_ORFAS', 'Operation', `${removedCount} operações órfãs de notas excluídas foram purgadas com sucesso.`);
+    }
+    return removedCount;
+  },
+
+  cleanupCorruptedProventosOperations(): number {
+    const docs = this.getDocuments();
+    const badDocIds = new Set<string>();
+
+    for (const doc of docs) {
+      if (
+        (doc.rawText && (/Proventos\s*recebidos/i.test(doc.rawText) || /investidor\.B3\.com\.br/i.test(doc.rawText))) ||
+        (doc.numeroNota && doc.numeroNota.startsWith('PROV_'))
+      ) {
+        badDocIds.add(doc.id);
+      }
+    }
+
+    const currentOps = this.getOperations();
+    const cleanOps = currentOps.filter(o => {
+      if (o.notaCorretagemId && badDocIds.has(o.notaCorretagemId)) return false;
+      return true;
+    });
+
+    const removedCount = currentOps.length - cleanOps.length;
+    if (removedCount > 0) {
+      setStored(KEYS.OPERATIONS, cleanOps);
+      const cleanDocs = docs.filter(d => !badDocIds.has(d.id));
+      setStored(KEYS.DOCUMENTS, cleanDocs);
+      this.logAudit('LIMPEZA_OPERACOES', 'Operation', `${removedCount} operações indevidas de extrato de proventos removidas com sucesso.`);
+    }
+    return removedCount;
   },
 
   getDividends(): Dividend[] {
@@ -375,6 +468,43 @@ export const HermasDB = {
     }
     setStored(KEYS.DIVIDENDS, list);
     this.logAudit('SALVAR_PROVENTO', 'Dividend', `${div.tipo} de ${div.ticker}`);
+  },
+
+  saveDividendsBatch(divs: Dividend[]) {
+    const list = this.getDividends();
+    let countNew = 0;
+    let countUpdated = 0;
+
+    const existingAssets = this.getAssets();
+    let assetsChanged = false;
+    for (const d of divs) {
+      if (!existingAssets.some(a => a.ticker === d.ticker)) {
+        existingAssets.push({
+          id: d.ticker,
+          ticker: d.ticker,
+          nome: d.ticker,
+          tipo: classifyAssetType(d.ticker),
+        });
+        assetsChanged = true;
+      }
+    }
+    if (assetsChanged) {
+      setStored(KEYS.ASSETS, existingAssets);
+    }
+
+    for (const div of divs) {
+      const idx = list.findIndex(d => d.id === div.id);
+      if (idx >= 0) {
+        list[idx] = div;
+        countUpdated++;
+      } else {
+        list.push(div);
+        countNew++;
+      }
+    }
+
+    setStored(KEYS.DIVIDENDS, list);
+    this.logAudit('LOTE_PROVENTOS', 'Dividend', `${countNew} proventos adicionados, ${countUpdated} atualizados.`);
   },
 
   deleteDividend(id: string) {

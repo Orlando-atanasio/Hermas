@@ -218,6 +218,14 @@ export default function App() {
     reloadVaultData();
   };
 
+  const handleConfirmDividendsBatch = (divs: Dividend[], docRecord?: DocumentRecord) => {
+    HermasDB.saveDividendsBatch(divs);
+    if (docRecord) {
+      HermasDB.saveDocument(docRecord);
+    }
+    reloadVaultData();
+  };
+
   const handleDeleteDividend = (id: string) => {
     HermasDB.deleteDividend(id);
     reloadVaultData();
@@ -406,6 +414,7 @@ export default function App() {
           <DocumentsView
             documents={documents}
             onConfirmCandidatesBatch={handleConfirmCandidatesBatch}
+            onConfirmDividendsBatch={handleConfirmDividendsBatch}
             onDeleteDocument={handleDeleteDocument}
           />
         )}

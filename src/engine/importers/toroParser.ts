@@ -104,6 +104,16 @@ export function parseToroNoteText(rawText: string): ParsedBrokerageNote {
 }
 
 export function parseBrokerageNoteText(rawText: string): ParsedBrokerageNote {
+  // Guarda estrita: rejeita extratos de proventos para não gerar operações falsas de compra/venda
+  if (
+    /Proventos\s*recebidos/i.test(rawText) &&
+    !/NOTA\s*DE\s*(?:CORRETAGEM|NEGOCIA[ÇC][ÃA]O)/i.test(rawText)
+  ) {
+    throw new Error(
+      'Este documento é um Extrato de Proventos Recebidos da B3 e não uma Nota de Corretagem de compras/vendas. Use a aba "Extrato de Proventos B3 / Toro".'
+    );
+  }
+
   const lines = rawText
     .split('\n')
     .map(l => l.trim())

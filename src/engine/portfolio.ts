@@ -238,13 +238,15 @@ export function calculatePortfolio(
   let jcpTotal = D(0);
   let rendFii = D(0);
 
-  dividends.forEach(d => {
-    const liq = D(d.valorLiquido);
-    totalDiv = totalDiv.add(liq);
-    if (d.tipo === 'DIVIDENDO') divAcoes = divAcoes.add(liq);
-    else if (d.tipo === 'JCP') jcpTotal = jcpTotal.add(liq);
-    else if (d.tipo === 'RENDIMENTO') rendFii = rendFii.add(liq);
-  });
+  dividends
+    .filter(d => d.status === 'RECEBIDO')
+    .forEach(d => {
+      const liq = D(d.valorLiquido);
+      totalDiv = totalDiv.add(liq);
+      if (d.tipo === 'DIVIDENDO') divAcoes = divAcoes.add(liq);
+      else if (d.tipo === 'JCP') jcpTotal = jcpTotal.add(liq);
+      else if (d.tipo === 'RENDIMENTO') rendFii = rendFii.add(liq);
+    });
 
   const totalReturnGeral = lucroTotal.add(totalDiv).add(sumLucroRealizado);
   const proventosStr = toCanonicalString(totalDiv, 2);

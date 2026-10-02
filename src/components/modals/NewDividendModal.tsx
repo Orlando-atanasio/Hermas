@@ -44,7 +44,9 @@ export const NewDividendModal: React.FC<NewDividendModalProps> = ({
   const [inputMode, setInputMode] = useState<'POR_ACAO' | 'TOTAL'>(initialData?.valorPorAcao ? 'POR_ACAO' : 'TOTAL');
   const [valorPorAcao, setValorPorAcao] = useState(initialData?.valorPorAcao || '0.50');
   const [valorTotalLiquido, setValorTotalLiquido] = useState(initialData?.valorLiquido || '50.00');
-  const [status, setStatus] = useState<'RECEBIDO' | 'PROVISIONADO'>(initialData?.status || 'RECEBIDO');
+  const [status, setStatus] = useState<'RECEBIDO' | 'PROVISIONADO'>(
+    initialData?.status === 'PROVISIONADO' ? 'PROVISIONADO' : 'RECEBIDO'
+  );
   const [observacoes, setObservacoes] = useState(initialData?.origem || '');
 
   // Atualizar sugestão de quantidade quando o ticker mudar
